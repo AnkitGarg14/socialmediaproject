@@ -1,0 +1,7 @@
+{
+  "name": "socialmediaproject",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Social media project",
+  "type": "module"
+}
