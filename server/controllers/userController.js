@@ -1,6 +1,5 @@
 import imagekit from "../configs/imagekit.js"
 import User from "../models/User.js"
-import fs from 'fs'
 import Connection from "../models/Connection.js"
 import Post from "../models/Post.js"
 import { inngest } from "../inngest/index.js"
@@ -50,13 +49,12 @@ export const updateUserData=async(req,res)=>{
     const cover=req.files.cover &&req.files.cover[0]
 
     if(profile){
-      const buffer=fs.readFileSync(profile.path);
       const response=await imagekit.upload({
-        file:buffer,
-        filename:profile.originalname,
+        file:profile.buffer,
+        fileName:profile.originalname,
       })
       const url=imagekit.url({
-        path:response.filepath,
+        path:response.filePath,
         transformation:[
           {quality:'auto'},
           {format:'webp'},
@@ -66,13 +64,12 @@ export const updateUserData=async(req,res)=>{
       updatedData.profile_picture=url;
     }
     if(cover){
-      const buffer=fs.readFileSync(profile.path);
       const response=await imagekit.upload({
-        file:buffer,
-        filename:profile.originalname,
+        file:cover.buffer,
+        fileName:cover.originalname,
       })
       const url=imagekit.url({
-        path:response.filepath,
+        path:response.filePath,
         transformation:[
           {quality:'auto'},
           {format:'webp'},

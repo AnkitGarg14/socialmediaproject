@@ -1,22 +1,20 @@
-import fs from 'fs';
 import Post from '../models/Post.js';
 import imagekit from '../configs/imagekit.js';
 import User from '../models/User.js';
 //Add post
 export const addPost=async(req,res)=>{
   try{
-     const {userId}=req.auth();
+     const {userId}=await req.auth();
      const {content,post_type}=req.body;
      const images=req.files  //upload middle ware se aagya;
 
      let image_urls=[]  //post ki images lo store jarenge iss arre me unke url ko
 
-     if(images.length){
+     if(images && images.length){
         image_urls=await Promise.all(
           images.map(async(image)=>{
-            const fileBuffer=fs.readFileSync(length.path)
             const response=await imagekit.upload({
-              file:buffer,
+              file:image.buffer,
               fileName:image.originalname,
               folder:"posts",
             })
@@ -49,13 +47,13 @@ export const addPost=async(req,res)=>{
 //Get post 
 export const getFeedPosts=async(req,res)=>{
   try{
-    const {userId}=req.auth();
+    const {userId}=await req.auth();
     const user=await User.findById(userId);
 
     //User connection and following
     const userIds=[userId,...user.connections,...user.following] //in sab ke id store kar rahe;
 
-    const post =await Post.find({user:{$in:userIds}}).populate('user').sort({createdAt:-1});
+    const posts =await Post.find({user:{$in:userIds}}).populate('user').sort({createdAt:-1});
 
     res.json({success:true,posts})
   }catch(error){
@@ -69,7 +67,7 @@ export const getFeedPosts=async(req,res)=>{
 export const likePost=async (req,res)=>{
 
   try{
-    const {userId}=req.auth()
+    const {userId}=await req.auth()
     const {postId}=req.body;
     const post=await Post.findById(postId);
 

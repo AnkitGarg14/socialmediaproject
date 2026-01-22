@@ -11,21 +11,26 @@ import Discover from "./pages/Discover";
 import Layout from "./pages/Layout";
 import {useUser,useAuth} from "@clerk/clerk-react";
 import { Toaster } from "react-hot-toast";
-
-
-  
-
+import { useDispatch } from "react-redux";
 import React,{useEffect} from "react";
+import { fetchUser } from "./features/user/userSlice";
     
 function App() {
   const {user} =useUser();
   const {getToken}=useAuth();
+  const dispatch=useDispatch();
 
   useEffect(()=>{
+    const fetchData=async()=>{
     if(user){
-      getToken().then((token)=>console.log(token));
+      const token=await getToken()
+      dispatch(fetchUser(token))
     }
-  },[user])
+  }
+  fetchData();
+  },[user,getToken,dispatch])
+
+
   return (
     <>
     <Toaster/>
