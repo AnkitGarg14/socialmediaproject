@@ -136,40 +136,56 @@ const deleteStory=inngest.createFunction(
   }
 )
 
-const sendNotificationOfUnseenMessages=inngest.createFunction(
-  
-   { id:"send-unseen-messages-notification"},
-   {corn :"TZ=America/New_York 0 9 * * *"},//every day 9 am;
-   async({step})=>{
-    const messages=await Message.find({seen:false}).populate('to_user_id');
-    const unseenCount={}
+export const sendNotificationOfUnseenMessages = inngest.createFunction(
+  {
+    id: "Send unseen messages notification",
+    cron: "TZ=America/New_York 0 9 * * *", // every day 9 AM
+  },
+  async ({ step }) => {
+    const messages = await Message.find({ seen: false })
+      .populate("to_user_id");
 
-    messages.map(message=>{
-      unseenCount[message.to_user_id._id]=(unseenCount[message.to_user_id._id]||0)+1;
-    })
-    for(const userId in unseenCount){
-      const user=await User.findById(userId);
+    const unseenCount = {};
 
-      const subject=`You have ${unseenCount[userID]} unseen messages`;
+    messages.forEach((message) => {
+      const userId = message.to_user_id._id.toString();
+      unseenCount[userId] = (unseenCount[userId] || 0) + 1;
+    });
 
-      const body=`
-      <div style="font-family:Arial,sans-serif;padding:20px;">
-       <h2>Hi ${user.full_name},</h2>
-       <p>yoy have ${unseenCount[userId]} unseen messages</P>
-       <p>Click <a href="${process.env.FRONTEND_URL}/messages" style="color:#10b981;">here</a> to view them </p>
-       <br/>
-       <p>Thanks,<br/>stay Connected</p>
-       </div>
+    for (const userId in unseenCount) {
+      const user = await User.findById(userId);
+
+      if (!user) continue;
+
+      const subject = `You have ${unseenCount[userId]} unseen messages`;
+
+      const body = `
+        <div style="font-family:Arial,sans-serif;padding:20px;">
+          <h2>Hi ${user.full_name},</h2>
+          <p>You have ${unseenCount[userId]} unseen messages.</p>
+          <p>
+            Click 
+            <a href="${process.env.FRONTEND_URL}/messages" style="color:#10b981;">
+              here
+            </a> 
+            to view them.
+          </p>
+          <br/>
+          <p>Thanks,<br/>Stay Connected</p>
+        </div>
       `;
-      await  sendEmail({
-        to:user.email,
+
+      await sendEmail({
+        to: user.email,
         subject,
         body,
-      })
+      });
     }
-    return {message:"notification send"}
-   }
-)
+
+    return { message: "Notifications sent successfully" };
+  }
+);
+
 // Create an empty array where we'll export future Inngest functions
 export const functions = [
   syncUserCreation,
