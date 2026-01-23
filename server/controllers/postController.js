@@ -87,4 +87,75 @@ export const likePost=async (req,res)=>{
 
 }
 
+// Add comment to post
+export const addComment=async(req,res)=>{
+  try{
+    const {userId}=await req.auth();
+    const {postId,text}=req.body;
+
+    const post=await Post.findById(postId);
+    if(!post){
+      return res.json({success:false,message:"Post not found"});
+    }
+
+    post.comments.push({user:userId,text});
+    await post.save();
+
+    // Populate the new comment with user data
+    await post.populate('comments.user');
+
+    res.json({success:true,message:"Comment added",post});
+  }catch(error){
+    console.log(error);
+    res.json({success:false,message:error.message});
+  }
+}
+
+// Get comments for a post
+export const getComments=async(req,res)=>{
+  try{
+    const {postId}=req.body;
+    const post=await Post.findById(postId).populate('comments.user');
+
+    if(!post){
+      return res.json({success:false,message:"Post not found"});
+    }
+
+    res.json({success:true,comments:post.comments});
+  }catch(error){
+    console.log(error);
+    res.json({success:false,message:error.message});
+  }
+}
+
+// Delete comment from post
+export const deleteComment=async(req,res)=>{
+  try{
+    const {userId}=await req.auth();
+    const {postId,commentId}=req.body;
+
+    const post=await Post.findById(postId);
+    if(!post){
+      return res.json({success:false,message:"Post not found"});
+    }
+
+    const comment=post.comments.id(commentId);
+    if(!comment){
+      return res.json({success:false,message:"Comment not found"});
+    }
+
+    if(comment.user.toString()!==userId){
+      return res.json({success:false,message:"You can only delete your own comments"});
+    }
+
+    post.comments.pull(commentId);
+    await post.save();
+
+    res.json({success:true,message:"Comment deleted"});
+  }catch(error){
+    console.log(error);
+    res.json({success:false,message:error.message});
+  }
+}
+
 

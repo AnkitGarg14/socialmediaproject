@@ -6,6 +6,6 @@ import { getChatMessage, sendMessage } from '../controllers/messageController.js
 const messageRouter=express.Router();
 
 messageRouter.post('/send',upload.single('image'),protect,sendMessage)
-messageRouter.get('/send',protect,getChatMessage);
+messageRouter.get('/get',protect,getChatMessage);
 
 export default messageRouter;

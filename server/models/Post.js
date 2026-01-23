@@ -9,7 +9,12 @@ const postSchema=new mongoose.Schema({
     enum:["text","image","text_with_image"],
     required:true
   },
-  likes_count:[{type:String,ref:'User'}] //kis kis ne like kara post ko;
+  likes_count:[{type:String,ref:'User'}], //kis kis ne like kara post ko;
+  comments:[{
+    user:{type:String,ref:'User',required:true},
+    text:{type:String,required:true},
+    createdAt:{type:Date,default:Date.now}
+  }]
 },{timestamps:true,minimize:false})
 
 const Post=mongoose.model("Post",postSchema);

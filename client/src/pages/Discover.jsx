@@ -1,26 +1,71 @@
-import React,{useState} from 'react'
-import { dummyConnectionsData } from '../assets/assets';
+import React,{useState,useEffect} from 'react'
 import { Search } from 'lucide-react';
 import Loading from '../components/Loading';
 import UserCard from '../components/UserCard';
+import api from '../api/axios';
+import { useAuth } from '@clerk/clerk-react';
+import toast from 'react-hot-toast';
+import { useDispatch } from 'react-redux';
+import { fetchUser } from '../features/user/userSlice';
 
 const Discover = () => {
-
+   
+  const dispatch=useDispatch();
   const [input,setInput]=useState('');
-  const [users,setUsers]=useState(dummyConnectionsData);
+  const [users,setUsers]=useState([]);
   const [loading,setLoading]=useState(false);
+
+  const {getToken}=useAuth();
+
+  // Fetch all users on mount
+  const fetchAllUsers=async()=>{
+    try{
+      setLoading(true);
+      const token=await getToken();
+      const {data}=await api.get('/api/user/all',{
+        headers:{Authorization:`Bearer ${token}`}
+      })
+      console.log("All users fetched:", data);
+      if(data.success){
+        setUsers(data.users);
+      }else{
+        toast.error(data.message);
+      }
+    }catch(error){
+      console.error("Error fetching users:", error);
+      toast.error(error.message);
+    }finally{
+      setLoading(false);
+    }
+  }
 
   const handleSearch=async(e)=>{
 
-    if(e.key==='Enter'){
-      setUsers([])
-      setLoading(true);
-      setTimeout(()=>{
-        setUsers(dummyConnectionsData);
+    if(e.key==='Enter' && input.trim()){
+      try{
+        setUsers([])
+        setLoading(true);
+        const {data}=await api.post('/api/user/discover',{input},{
+          headers:{Authorization:`Bearer ${await getToken()}`}
+        })
+        data.success? setUsers(data.users):toast.error(data.message);
         setLoading(false);
-      },1000)
+        
+      }catch(error){
+        toast.error(error.message);
+      }
+      setLoading(false);
     }
   }
+  useEffect(()=>{
+    const loadData=async()=>{
+      const token=await getToken();
+      dispatch(fetchUser(token));
+      await fetchAllUsers();
+    }
+    loadData();
+  },[getToken, dispatch]);
+
 
   return (
     <div className='min-h-screen bg-gradient-to-b from-slate-50 to-white'>
@@ -36,7 +81,7 @@ const Discover = () => {
           <div className='relative'>
             <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5'/>
             <input type="text" placeholder="Search by name,username,bio,or location...."
-              className='pl-10 sm:pl-12 py-2 w-full border border-gray-300 rounded-md max-sm:text-sm' onChange={(e)=>setInput(e.target.value)} value={input} onKeyUP={handleSearch}/>
+              className='pl-10 sm:pl-12 py-2 w-full border border-gray-300 rounded-md max-sm:text-sm' onChange={(e)=>setInput(e.target.value)} value={input} onKeyUp={handleSearch}/>
           </div>
         </div>
         </div>

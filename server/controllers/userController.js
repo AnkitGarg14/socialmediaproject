@@ -7,7 +7,7 @@ import { inngest } from "../inngest/index.js"
 // get User data using userId;
 export const getUserData=async(req,res)=>{
   try{
-    const {userId}=req.auth()
+    const {userId}=await req.auth()
     const user=await User.findById(userId)
     if(!user){
       return res.json({success:false,message:"User not found"})
@@ -24,7 +24,7 @@ export const getUserData=async(req,res)=>{
 
 export const updateUserData=async(req,res)=>{
   try{
-    const {userId}=req.auth()
+    const {userId}=await req.auth()
     let {username,bio,location,full_name}=req.body;
 
 
@@ -89,10 +89,25 @@ export const updateUserData=async(req,res)=>{
 }
 
 
+
+// Get All Users
+export const getAllUsers=async(req,res)=>{
+  try{
+    const {userId}=await req.auth()
+    console.log("Fetching all users, excluding:", userId);
+    const allUsers=await User.find({_id:{$ne:userId}}) //exclude current user
+    console.log("Total users found:", allUsers.length);
+    res.json({success:true,users:allUsers})
+  }catch(error){
+    console.log("Error in getAllUsers:", error);
+    res.json({success:false,message:"Failed to fetch users"});
+  }
+}
+
 // Find User using username ,email,location,name
 export const discoverUsers=async(req,res)=>{
   try{
-    const {userId}=req.auth()
+    const {userId}=await req.auth()
     const {input}=req.body;
 
     const allUsers=await User.find(
@@ -119,7 +134,7 @@ export const discoverUsers=async(req,res)=>{
 //Follow user
 export const followUser=async (req,res)=>{
   try{
-       const {userId}=req.auth()
+       const {userId}=await req.auth()
        const {id}=req.body; //dusre user ki id jisse foolow karna chhate ho
 
        const user=await User.findById(userId);
@@ -138,7 +153,7 @@ export const followUser=async (req,res)=>{
        res.json({success:true,message:"Now you are following this user"})
   }catch(error){
     console.log(error);
-    res.join({success:false,message:error.message});
+    res.json({success:false,message:error.message});
   }
 }
 
@@ -146,7 +161,7 @@ export const followUser=async (req,res)=>{
 
 export const unfollowUser=async (req,res)=>{
   try{
-       const {userId}=req.auth()
+       const {userId}=await req.auth()
        const {id}=req.body; //dusre user ki id jisse foolow karna chhate ho
         
        const user=await User.findById(userId);
@@ -155,13 +170,13 @@ export const unfollowUser=async (req,res)=>{
       await user.save();
       
       const toUser=await User.findById(id);
-      toUser.followers=user.followers.filter(user=>user!==userid);
+      toUser.followers=toUser.followers.filter(user=>user!==userId);
       await toUser.save();
 
       res.json({success:true,message:'you are no longer following this user'})
   }catch(error){
     console.log(error);
-    res.join({success:false,message:error.message});
+    res.json({success:false,message:error.message});
   }
 }
 
@@ -169,7 +184,7 @@ export const unfollowUser=async (req,res)=>{
 
 export const sendConnectionRequest=async(req,res)=>{
   try{
-    const {userId}=req.auth()
+    const {userId}=await req.auth()
     const {id}=req.body;
 
     //check if
@@ -214,7 +229,7 @@ export const sendConnectionRequest=async(req,res)=>{
 //get user Connection
 export const getUserConnection=async(req,res)=>{
   try{
-    const {userId}=req.auth();
+    const {userId}=await req.auth();
     const user=await User.findById(userId).populate('connections followers following');
 
     const connections=user.connections;
@@ -238,20 +253,25 @@ export const getUserConnection=async(req,res)=>{
 
 export const acceptConnectionRequest=async(req,res)=>{
   try{
-    const {userId}=req.auth();
+    const {userId}=await req.auth();
     const {id}=req.body;
     const connection=await Connection.findOne({from_user_id:id,to_user_id:userId})
 
     if(!connection){
       return res.json({success:false,message:"Connection not found"});
     }
-    const user=await User.findById(userId);
-    user.connections.push(id);
-    await user.save();
-   
-    const toUser=await User.findById(Id);
-    toUser.connections.push(userId);
-    await toUser.save();
+     if (connection.status === 'accepted') {
+      return res.json({ success: false, message: "Already accepted" });
+    }
+     await User.findByIdAndUpdate(
+      userId,
+      { $addToSet: { connections: id } }
+    );
+
+    await User.findByIdAndUpdate(
+      id,
+      { $addToSet: { connections: userId } }
+    );
 
     connection.status='accepted';
     await connection.save();
@@ -280,3 +300,4 @@ export const getUserProfiles=async(req,res)=>{
     res.json({success:false,message:error.message});
   }
 }
+

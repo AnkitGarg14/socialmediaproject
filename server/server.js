@@ -2,39 +2,48 @@ import express from "express";
 import cors from "cors";
 import "dotenv/config";
 import connectDB from "./configs/db.js";
-import { inngest, functions } from "./inngest/index.js"
+import http from "http";
+
+import { inngest, functions } from "./inngest/index.js";
 import { serve } from "inngest/express";
-import { clerkMiddleware } from '@clerk/express'
-import userRouter from "./routes/userRoutes.js"
+
+import { clerkMiddleware } from "@clerk/express";
+
+import userRouter from "./routes/userRoutes.js";
 import postRouter from "./routes/postRoutes.js";
 import storyRouter from "./routes/storyRoutes.js";
-import http from "http";
 import messageRouter from "./routes/messageRoutes.js";
+
 import { initSocket } from "./socket/socket.js";
 
-
-
-const app=express();
+const app = express();
 const server = http.createServer(app);
 
+// 🔥 INIT SOCKET BEFORE ANY MIDDLEWARE
 initSocket(server);
 
+await connectDB();
 
-await connectDB()
-
-app.use(express.json());
 app.use(cors());
-app.use(clerkMiddleware());
+app.use(express.json());
 
-app.get("/",(req,res)=>res.send("server is running"));
-app.use('/api/inngest',serve({ client: inngest, functions }));
+// ❌ clerkMiddleware globally mat lagao
+// app.use(clerkMiddleware()); ❌
 
+// ✅ Apply Clerk ONLY on API routes
+app.use("/api", clerkMiddleware());
 
-app.use('/api/user',userRouter);
-app.use('/api/post',postRouter);
-app.use('/api/story',storyRouter);
-app.use('/api/message',messageRouter);
+app.get("/", (req, res) => res.send("server is running"));
 
-const PORT=process.env.PORT||4000;
+app.use("/api/inngest", serve({ client: inngest, functions }));
 
-app.listen(PORT,()=>console.log(`server is running on port ${PORT}`));
+app.use("/api/user", userRouter);
+app.use("/api/post", postRouter);
+app.use("/api/story", storyRouter);
+app.use("/api/message", messageRouter);
+
+const PORT = process.env.PORT || 4000;
+
+server.listen(PORT, () =>
+  console.log(`server is running on port ${PORT}`)
+);

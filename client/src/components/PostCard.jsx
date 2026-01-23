@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import {useAuth} from "@clerk/clerk-react"
 import api from '../api/axios';
 import {toast} from "react-hot-toast"
+import Comments from './Comments';
 
 
 const PostCard = ({post}) => {
@@ -15,6 +16,8 @@ const PostCard = ({post}) => {
 );
 
    const [likes,setLikes]=useState(post.likes_count);
+   const [commentCount, setCommentCount] = useState(post.comments?.length || 0);
+   const [showComments, setShowComments] = useState(false);
    const currentUser=useSelector((state)=>state.user.value)
 
    const {getToken}=useAuth();
@@ -41,6 +44,11 @@ const PostCard = ({post}) => {
     }
           
    }
+   
+   const handleCommentChange = (newCount) => {
+    setCommentCount(newCount);
+   }
+   
    const navigate=useNavigate();
 
   return (
@@ -72,16 +80,13 @@ const PostCard = ({post}) => {
           <Heart className={`w-4 h-4 cursor-pointer ${likes.includes(currentUser._id) && "text-red-500 fill-red-500"}`} onClick={handleLike}/>
           <span>{likes.length}</span>
         </div>
-        <div className='flex items-center gap-1'>
-          <MessageCircle className="w-4 h-4"/>
-          <span>{12}</span>
+        <div className='flex items-center gap-1 cursor-pointer hover:text-indigo-600' onClick={() => setShowComments(true)}>
+          <MessageCircle className='w-4 h-4'/>
+          <span>{commentCount}</span>
         </div>
-        <div className="flex items-center gap-1">
-          <Share2 className="w-4 h-4"/>
-          <span>{7}</span>
-        </div>
-
       </div>
+
+      {showComments && <Comments post={post} onClose={() => setShowComments(false)} onCommentChange={handleCommentChange} />}
     </div>
   )
 }

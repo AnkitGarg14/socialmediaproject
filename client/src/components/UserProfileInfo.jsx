@@ -1,4 +1,4 @@
-import { Calendar, MapPin, PenBox } from 'lucide-react'
+import { Calendar, MapPin, PenBox, BadgeCheck } from 'lucide-react'
 import moment from 'moment'
 import React from 'react'
 
@@ -14,7 +14,7 @@ const UserProfileInfo = ({user,posts,profileId,setShowEdit}) => {
             <div>
               <div className='flex items-center gap-3'>
                 <h1 className='text-2xl font-bold text-gray-900'>{user.full_name}</h1>
-                <verified className="w-6 h-6 text-blue-500"/>
+                <BadgeCheck className="w-6 h-6 text-blue-500"/>
               </div>
               <p>{user.username ? `@${user.username}`:'Add a username'}</p>
             </div>
